@@ -28,10 +28,25 @@ if (navigator.geolocation) {
           '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       }).addTo(map);
 
-      L.marker([latitude, longitude])
-        .addTo(map)
-        .bindPopup('A pretty CSS3 popup.<br> Easily customizable.')
-        .openPopup();
+      //   console.log(map);
+      //ON is the map's own method which it inherits from its prototype chain.
+      map.on('click', function (mapClickEvent) {
+        const { lat, lng } = mapClickEvent.latlng; //destructuring lat & lng from "map click event"
+
+        L.marker([lat, lng])
+          .addTo(map)
+          .bindPopup(
+            L.popup({
+              maxWidth: 200,
+              minWidth: 100,
+              autoClose: false,
+              closeOnClick: false,
+              className: 'running-popup',
+            })
+          )
+          .setPopupContent('Workout happening')
+          .openPopup();
+      });
     },
     function () {
       alert('No position');
