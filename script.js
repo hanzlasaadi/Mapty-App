@@ -55,6 +55,8 @@ class App {
   //Global Variables to avoid errors
   #map;
   #mapEvent;
+  #workouts = [];
+  #capitalize = string => string.charAt(0).toUpperCase() + string.slice(1);
 
   constructor() {
     this._getPosition();
@@ -91,10 +93,9 @@ class App {
     //Using Leaflet library to display a map
     this.#map = L.map('map').setView([latitude, longitude], 13);
     //"l" is a namespace just like {intl} that gives us certain methods such as map, tilelayer, marker
-    L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    }).addTo(this.#map);
+    L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png').addTo(
+      this.#map
+    );
 
     //   console.log(map);
     //ON is the map's own method which it inherits from its prototype chain.
@@ -117,14 +118,50 @@ class App {
   _newWorkout(e) {
     e.preventDefault();
 
-    //input fields are emptied when form submits
-    inputCadence.value =
-      inputDistance.value =
-      inputDuration.value =
-      inputElevation.value =
-        '';
+    const validity = (...inputs) => inputs.every(val => Number.isFinite(val));
+    const positivity = (...inputs) => inputs.every(val => val > 0);
 
+    // get data from form
+    const type = inputType.value;
+    const distance = Number(inputDistance.value);
+    const duration = Number(inputDuration.value);
+    // some variables
     const { lat, lng } = this.#mapEvent.latlng; //destructuring lat & lng from "map click event"
+    let workout;
+
+    // if input running, create running object
+    if (type === 'running') {
+      const cadence = Number(inputCadence.value);
+
+      //data validity
+      if (
+        !validity(distance, duration, cadence) ||
+        !positivity(distance, duration, cadence)
+      )
+        return alert('Enter valid numbers. Please!!!');
+
+      workout = new Running([lat, lng], distance, duration, cadence);
+      console.log(workout);
+    }
+    // if input cycling, then create cycling object
+    if (type === 'cycling') {
+      const elevation = Number(inputElevation.value);
+
+      //data validity
+      if (
+        !validity(distance, duration, elevation) ||
+        !positivity(distance, duration)
+      )
+        return alert('Enter valid numbers. Please!!!');
+
+      workout = new Cycling([lat, lng], distance, duration, elevation);
+      console.log(workout);
+    }
+
+    // add new object to workout array
+    this.#workouts.push(workout);
+
+    // render workout on map as marker
     L.marker([lat, lng])
       .addTo(this.#map)
       .bindPopup(
@@ -133,11 +170,22 @@ class App {
           minWidth: 100,
           autoClose: false,
           closeOnClick: false,
-          className: 'running-popup',
+          className: `${type}-popup`,
         })
       )
-      .setPopupContent('Workout happening')
+      .setPopupContent(`${this.#capitalize(type)} happening`)
       .openPopup();
+
+    // render workout as a list
+
+    // hide form and clear input fields
+
+    //input fields are emptied when form submits
+    inputCadence.value =
+      inputDistance.value =
+      inputDuration.value =
+      inputElevation.value =
+        '';
   }
 }
 
