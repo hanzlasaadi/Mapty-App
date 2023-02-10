@@ -66,6 +66,7 @@ class App {
   #map;
   #mapEvent;
   #workouts = [];
+  #coords;
   #capitalize = string => string.charAt(0).toUpperCase() + string.slice(1);
 
   constructor() {
@@ -74,6 +75,8 @@ class App {
     form.addEventListener('submit', this._newWorkout.bind(this));
     //Change cadence/elevation for running/cycling
     inputType.addEventListener('change', this._toggleElevationField);
+    //adding an event listener to the list to move the map to the specific marker
+    containerWorkouts.addEventListener('click', this._moveToMarker.bind(this));
   }
 
   //Defining Methods
@@ -94,11 +97,11 @@ class App {
   }
 
   _loadMap(position) {
-    console.log('position parameter: ', position);
+    // console.log('position parameter: ', position);
     const { latitude, longitude, accuracy } = position.coords;
     // const { accuracy } = position.coords;
-    console.log(latitude, longitude);
-    console.log('Accuracy(meters): ', accuracy);
+    // console.log(latitude, longitude);
+    // console.log('Accuracy(meters): ', accuracy);
 
     //Using Leaflet library to display a map
     this.#map = L.map('map').setView([latitude, longitude], 13);
@@ -162,7 +165,7 @@ class App {
         return alert('Enter valid numbers. Please!!!');
 
       workout = new Running([lat, lng], distance, duration, cadence);
-      console.log(workout);
+      // console.log(workout);
     }
     // if input cycling, then create cycling object
     if (type === 'cycling') {
@@ -176,7 +179,9 @@ class App {
         return alert('Enter valid numbers. Please!!!');
 
       workout = new Cycling([lat, lng], distance, duration, elevation);
-      console.log(workout);
+      // console.log(workout);
+      this.#coords = workout.coords;
+      // console.log('cords', workout.coords);
     }
 
     // add new object to workout array
@@ -258,6 +263,25 @@ class App {
 
     //add this html element after the first element EACH TIME
     form.insertAdjacentHTML('afterend', html);
+  }
+
+  _moveToMarker(e) {
+    const workoutEl = e.target.closest('.workout');
+
+    if (!workoutEl) return;
+
+    //find the clicked workout;
+    const workout = this.#workouts.find(
+      work => work.id === workoutEl.dataset.id
+    );
+
+    //zooming into the clicked workout
+    this.#map.setView(workout.coords, 13, {
+      animate: true,
+      pan: {
+        duration: 1,
+      },
+    });
   }
 }
 
