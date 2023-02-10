@@ -66,11 +66,17 @@ class App {
   #map;
   #mapEvent;
   #workouts = [];
-  #coords;
-  #capitalize = string => string.charAt(0).toUpperCase() + string.slice(1);
+  // #coords;
+  // #capitalize = string => string.charAt(0).toUpperCase() + string.slice(1);
 
   constructor() {
+    //getting position from browser
     this._getPosition();
+
+    // exporting items from local storage
+    this._getLocalStorage();
+
+    // ----------calling event listeners
     //when the form is submitted, this happens
     form.addEventListener('submit', this._newWorkout.bind(this));
     //Change cadence/elevation for running/cycling
@@ -114,6 +120,12 @@ class App {
     //ON is the map's own method which it inherits from its prototype chain.
     //Handling clicks on map
     this.#map.on('click', this._showForm.bind(this));
+
+    // at the end of loading map, we render markers from local storage
+    this.#workouts.forEach(val => {
+      // val._renderWorkoutList(val);
+      this._renderWorkoutMarkers(val);
+    });
   }
 
   _showForm(mapClickEvent) {
@@ -188,7 +200,20 @@ class App {
     this.#workouts.push(workout);
 
     // render workout on map as marker
-    L.marker([lat, lng])
+    this._renderWorkoutMarkers(workout);
+
+    // render workout as a list
+    this._renderWorkoutList(workout);
+
+    // hide form and clear input fields
+    this._hideForm();
+
+    // import workouts in local storage
+    this._setLocalStorage();
+  }
+
+  _renderWorkoutMarkers(workout) {
+    L.marker(workout.coords)
       .addTo(this.#map)
       .bindPopup(
         L.popup({
@@ -196,19 +221,13 @@ class App {
           minWidth: 100,
           autoClose: false,
           closeOnClick: false,
-          className: `${type}-popup`,
+          className: `${workout.type}-popup`,
         })
       )
       .setPopupContent(
         `${workout.type === 'running' ? '🏃‍♂️' : '🚴‍♀️'} ${workout.description}`
       )
       .openPopup();
-
-    // render workout as a list
-    this._renderWorkoutList(workout);
-
-    // hide form and clear input fields
-    this._hideForm();
   }
 
   _renderWorkoutList(workout) {
@@ -281,6 +300,22 @@ class App {
       pan: {
         duration: 1,
       },
+    });
+  }
+
+  _setLocalStorage() {
+    localStorage.setItem('workouts', JSON.stringify(this.#workouts));
+  }
+
+  _getLocalStorage() {
+    const workout = JSON.parse(localStorage.getItem('workouts'));
+
+    if (!workout) return;
+
+    this.#workouts = workout;
+
+    this.#workouts.forEach(val => {
+      this._renderWorkoutList(val);
     });
   }
 }
